@@ -1,5 +1,4 @@
-# 교재를 보고 입력한 기록 저장/불러오기
-# ----------------------------
+
 def load_notes():
     if not RECORD_FILE.exists():
         return {"meanings": {}, "source": ""}
