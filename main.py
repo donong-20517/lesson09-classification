@@ -1,35 +1,3 @@
-import json
-from pathlib import Path
-
-import pandas as pd
-import streamlit as st
-
-# ----------------------------
-# 기본 설정
-# ----------------------------
-st.set_page_config(
-    page_title="뇌졸중 예측 실습실",
-    page_icon="🧠",
-    layout="wide",
-)
-
-st.title("🧠 뇌졸중 예측 실습실")
-st.write(
-    "이 실습실에서는 뇌졸중 관련 데이터를 살펴보고, 각 열의 의미와 데이터의 특징을 확인합니다. "
-    "첫 화면에서는 데이터의 전체적인 구조를 확인할 수 있습니다."
-)
-
-DATA_URL = "https://raw.githubusercontent.com/donong-20517/data/refs/heads/main/stroke.csv"
-RECORD_DIR = Path("내_기록")
-RECORD_FILE = RECORD_DIR / "stroke_data_notes.json"
-
-EXPECTED_COLUMNS = [
-    "id", "gender", "age", "hypertension", "heart_disease", "ever_married",
-    "work_type", "Residence_type", "avg_glucose_level", "bmi",
-    "smoking_status", "stroke",
-]
-
-# ----------------------------
 # 교재를 보고 입력한 기록 저장/불러오기
 # ----------------------------
 def load_notes():
@@ -93,3 +61,68 @@ card3.metric("stroke가 1인 사람 수", f"{stroke_count:,}명")
 card4.metric("stroke가 1인 비율", f"{stroke_ratio:.2f}%")
 
 st.divider()
+
+# ----------------------------
+# 열 설명 표와 우리말 뜻 입력
+# ----------------------------
+st.subheader("열 이름과 데이터 구조")
+st.write("‘우리말 뜻’ 칸을 교재를 참고해 직접 채운 뒤, 아래 저장 버튼을 눌러 주세요.")
+
+meanings = notes.get("meanings", {})
+if not isinstance(meanings, dict):
+    meanings = {}
+
+rows = []
+for column in df.columns:
+    values = df[column]
+    rows.append({
+        "열 이름": column,
+        "우리말 뜻": str(meanings.get(column, "")),
+        "값의 종류": int(values.nunique(dropna=True)),
+        "빈 값 개수": int(values.isna().sum()),
+    })
+
+# 편집 가능한 표. '우리말 뜻'만 수정 가능
+meaning_table = pd.DataFrame(rows, columns=["열 이름", "우리말 뜻", "값의 종류", "빈 값 개수"])
+edited_table = st.data_editor(
+    meaning_table,
+    hide_index=True,
+    use_container_width=True,
+    disabled=["열 이름", "값의 종류", "빈 값 개수"],
+    column_config={
+        "열 이름": st.column_config.TextColumn("열 이름"),
+        "우리말 뜻": st.column_config.TextColumn("우리말 뜻", help="교재를 보고 직접 입력하세요."),
+        "값의 종류": st.column_config.NumberColumn("값의 종류"),
+        "빈 값 개수": st.column_config.NumberColumn("빈 값 개수"),
+    },
+    key="meaning_editor",
+)
+
+st.divider()
+
+# ----------------------------
+# 처음 다섯 줄
+# ----------------------------
+st.subheader("데이터 처음 다섯 줄")
+st.dataframe(df.head(5), hide_index=True, use_container_width=True)
+
+st.divider()
+
+# ----------------------------
+# 데이터 출처 기록
+# ----------------------------
+st.subheader("데이터 출처 기록")
+st.write("교재에 적힌 데이터 출처를 입력해 주세요. 입력한 내용은 ‘내_기록/stroke_data_notes.json’에 저장됩니다.")
+
+source_text = st.text_area(
+    "데이터 출처",
+    value=str(notes.get("source", "")),
+    height=100,
+    placeholder="교재에 나온 데이터 출처를 여기에 적으세요.",
+    key="source_editor",
+)
+
+if st.button("우리말 뜻과 출처 저장", type="primary"):
+    updated_meanings = {}
+    for _, row in edited_table.iterrows():
+        updated_meanings[str(row["열 이름"])] = str(row["우리말 뜻"]) if pd.notna(row["우리말 뜻"]) else ""
