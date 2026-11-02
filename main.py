@@ -1,4 +1,36 @@
+import json
+from pathlib import Path
 
+import pandas as pd
+import streamlit as st
+
+# ----------------------------
+# 기본 설정
+# ----------------------------
+st.set_page_config(
+    page_title="뇌졸중 예측 실습실",
+    page_icon="🧠",
+    layout="wide",
+)
+
+st.title("🧠 뇌졸중 예측 실습실")
+st.write(
+    "이 실습실에서는 뇌졸중 관련 데이터를 살펴보고, 각 열의 의미와 데이터의 특징을 확인합니다. "
+    "첫 화면에서는 데이터의 전체적인 구조를 확인할 수 있습니다."
+)
+
+DATA_URL = "https://raw.githubusercontent.com/donong-20517/data/refs/heads/main/stroke.csv"
+RECORD_DIR = Path("내_기록")
+RECORD_FILE = RECORD_DIR / "stroke_data_notes.json"
+
+EXPECTED_COLUMNS = [
+    "id", "gender", "age", "hypertension", "heart_disease", "ever_married",
+    "work_type", "Residence_type", "avg_glucose_level", "bmi",
+    "smoking_status", "stroke",
+]
+
+# 교재를 보고 입력한 기록 저장/불러오기
+# ----------------------------
 def load_notes():
     if not RECORD_FILE.exists():
         return {"meanings": {}, "source": ""}
